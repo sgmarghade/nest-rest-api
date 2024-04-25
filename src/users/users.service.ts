@@ -1,61 +1,41 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { DatabaseService } from '../database/database.service';
 
 @Injectable()
 export class UsersService {
-  private users = [
-    {
-      id: 1,
-      name: 'Swapnil',
-      email: 'swapnil@gmail.com',
-      role: 'ADMIN',
-    },
-    {
-      id: 2,
-      name: 'Pankaj',
-      email: 'pankaj@gmail.com',
-      role: 'CONTRIBUTOR',
-    },
-  ];
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  findAll(role?: string): {} {
-    return this.users.filter((input) => {
-      return role ? input.role.toLowerCase() === role.toLowerCase() : input;
-    });
-  }
-
-  findUserById(id: number) {
-    return this.users.find((input) => {
-      return input.id === id;
-    });
-  }
-
-  createUser(user: { name: string; email: string; role: string }) {
-    const newUser = {
-      id: this.users.length + 1,
-      ...user,
-    };
-    this.users.push(newUser);
-    return newUser;
-  }
-
-  updateUser(
-    id: number,
-    user: { name?: string; email?: string; role?: string },
-  ) {
-    const existingUser = this.users.find((input) => {
-      return input.id === id;
-    });
-
-    if (!user) {
-      return;
+  async findAll(role?: 'INTERN' | 'ADMIN' | 'CONTRIBUTOR') {
+    if (role) {
+      return this.databaseService.user.findMany({
+        where: {
+          role,
+        },
+      });
     }
 
-    user = { ...existingUser, ...user };
-    return user;
+    return this.databaseService.user.findMany({});
   }
 
-  deleteUser(id: number) {
-    this.users = this.users.filter((input) => input.id !== id);
-    return 'User deleted';
+  async findUserById(id: number) {
+    return this.databaseService.user.findUnique({ where: { id } });
+  }
+
+  async createUser(createUserDto: Prisma.UserCreateInput) {
+    return this.databaseService.user.create({
+      data: createUserDto,
+    });
+  }
+
+  async updateUser(id: number, updateUserDto: Prisma.UserUpdateInput) {
+    return this.databaseService.user.update({
+      where: { id },
+      data: updateUserDto,
+    });
+  }
+
+  async deleteUser(id: number) {
+    return this.databaseService.user.delete({ where: { id } });
   }
 }
